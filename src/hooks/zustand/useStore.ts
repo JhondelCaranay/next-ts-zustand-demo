@@ -1,5 +1,5 @@
 import { create } from "zustand";
-
+import { persist, createJSONStorage } from "zustand/middleware";
 export interface Task {
   title: string;
   state: "PLANNED" | "ONGOING" | "DONE";
@@ -15,28 +15,36 @@ interface TaskState {
   moveTask: (task: Task, state: "PLANNED" | "ONGOING" | "DONE") => void;
 }
 
-const useTaskStore = create<TaskState>()((set) => ({
-  tasks: [{ title: "Task 1", state: "PLANNED", updatedAt: new Date() }],
-  draggedTask: null,
-  addTask: (task) =>
-    set((state) => ({
-      tasks: [...state.tasks, { ...task, updatedAt: new Date() }],
-    })),
-  deleteTask: (task) =>
-    set((state) => ({
-      tasks: state.tasks.filter((t) => t.title !== task.title),
-    })),
-  setDraggedTask: (task) =>
-    set((state) => ({
-      draggedTask: task,
-    })),
-  moveTask: (task, state) => {
-    set((s) => ({
-      tasks: s.tasks.map((t) =>
-        t.title === task.title ? { ...t, state, updatedAt: new Date() } : t
-      ),
-    }));
-  },
-}));
+const useTaskStore = create<TaskState>()(
+  persist(
+    (set) => ({
+      tasks: [],
+      draggedTask: null,
+      addTask: (task) =>
+        set((state) => ({
+          tasks: [...state.tasks, { ...task, updatedAt: new Date() }],
+        })),
+      deleteTask: (task) =>
+        set((state) => ({
+          tasks: state.tasks.filter((t) => t.title !== task.title),
+        })),
+      setDraggedTask: (task) =>
+        set((state) => ({
+          draggedTask: task,
+        })),
+      moveTask: (task, state) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.title === task.title ? { ...t, state, updatedAt: new Date() } : t
+          ),
+        }));
+      },
+    }),
+    {
+      name: "task-storage",
+      storage: createJSONStorage(() => sessionStorage), // (optional) by default, 'localStorage' is used
+    }
+  )
+);
 
 export default useTaskStore;

@@ -1,7 +1,7 @@
 import Task from "./Task";
 import { shallow } from "zustand/shallow";
 import useTaskStore from "@/hooks/zustand/useStore";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   state: "PLANNED" | "ONGOING" | "DONE";
@@ -13,12 +13,19 @@ const Column = ({ state }: Props) => {
 
   const tasks = useTaskStore((s) => s.tasks.filter((task) => task.state === state), shallow);
 
+  const [loaded, setLoaded] = useState(false);
+
   // filter by updatedAt desc
   const filterTasks = useMemo(() => {
     return tasks.sort((a, b) => {
       return new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime();
     });
   }, [tasks]);
+
+  // fix hydration error in nextjs
+  useEffect(() => {
+    setLoaded(true);
+  }, []);
 
   const addTask = useTaskStore((s) => s.addTask);
 
@@ -59,9 +66,7 @@ const Column = ({ state }: Props) => {
       </div>
 
       <div className="flex flex-col items-center gap-1">
-        {filterTasks.map((task) => (
-          <Task title={task.title} key={task.title} />
-        ))}
+        {loaded && filterTasks.map((task) => <Task title={task.title} key={task.title} />)}
       </div>
 
       {open && (

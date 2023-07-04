@@ -18,7 +18,7 @@ const Task = ({ title }: Props) => {
 
   return (
     <div
-      className={`flex w-[299px] cursor-move flex-col justify-between gap-1 overflow-hidden bg-white p-2 text-black`}
+      className={`flex w-full max-w-[299] cursor-move flex-col justify-between gap-1 overflow-hidden bg-white p-2 text-black`}
       draggable={true}
       onDragStart={(e) => {
         setDraggedTask(task);
