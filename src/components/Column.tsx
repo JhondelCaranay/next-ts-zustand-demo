@@ -1,7 +1,7 @@
 import Task from "./Task";
 import { shallow } from "zustand/shallow";
 import useTaskStore from "@/hooks/zustand/useStore";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type Props = {
   state: "PLANNED" | "ONGOING" | "DONE";
@@ -9,24 +9,46 @@ type Props = {
 const Column = ({ state }: Props) => {
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
+  const [drop, setDrop] = useState(false);
 
   const tasks = useTaskStore((s) => s.tasks.filter((task) => task.state === state), shallow);
 
-  // const filteredTask = useMemo(() => {
-  //   return task.filter((task) => task.state === state);
-  // }, [task, state]);
+  // filter by updatedAt desc
+  const filterTasks = useMemo(() => {
+    return tasks.sort((a, b) => {
+      return new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime();
+    });
+  }, [tasks]);
 
   const addTask = useTaskStore((s) => s.addTask);
+
+  const setDraggedTask = useTaskStore((s) => s.setDraggedTask);
+  const draggedTask = useTaskStore((s) => s.draggedTask);
+  const moveTask = useTaskStore((s) => s.moveTask);
 
   return (
     //
     <div
-      className="min-h-[20rem] max-w-[20rem]  basis-96 space-y-2 rounded bg-gray-800 p-2 text-white"
-      onDragOver={(e) => e.preventDefault()}
-      onDragLeave={(e) => e.preventDefault()}
-      onDrop={(e) => e.preventDefault()}
+      className={`h-[90vh] max-h-[90vh] basis-80 space-y-2 overflow-y-scroll rounded border-gray-800 bg-gray-800 p-2 text-white border-4${
+        drop ? " border-dashed border-green-500" : ""
+      }`}
+      onDragOver={(e) => {
+        setDrop(true);
+        e.preventDefault(); // prevent default to allow drop
+      }}
+      onDragLeave={(e) => {
+        setDrop(false);
+        e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (!draggedTask) return;
+        // console.log(draggedTask);
+        setDrop(false);
+        moveTask(draggedTask, state);
+        setDraggedTask(null);
+      }}
     >
-      <div className="flex items-center justify-between">
+      <div className="sticky top-0 flex items-center justify-between  bg-gray-800 ">
         <p>{state}</p>
         <button
           className="h-fit cursor-pointer rounded bg-white p-1 text-black hover:bg-gray-400"
@@ -36,8 +58,8 @@ const Column = ({ state }: Props) => {
         </button>
       </div>
 
-      <div className="flex w-full flex-col items-center gap-1">
-        {tasks.map((task) => (
+      <div className="flex flex-col items-center gap-1">
+        {filterTasks.map((task) => (
           <Task title={task.title} key={task.title} />
         ))}
       </div>
@@ -47,12 +69,12 @@ const Column = ({ state }: Props) => {
           <div className="absolute left-1/2 top-1/2 z-10 flex h-20 w-96 -translate-x-1/2 -translate-y-1/2 rounded border bg-white p-4 shadow">
             <div className="flex w-full items-center justify-between gap-1">
               <input
-                className="w-full rounded border p-2 text-black"
+                className="w-full rounded border border-black p-2 text-black outline-none "
                 onChange={(e) => setText(e.target.value)}
                 value={text}
               />
               <button
-                className="h-fit cursor-pointer rounded border bg-white p-2 text-black hover:bg-gray-400"
+                className="h-fit cursor-pointer rounded border border-black bg-white p-2 text-black hover:bg-gray-400 active:bg-sky-300 "
                 onClick={() => {
                   addTask({ title: text, state });
                   setText("");

@@ -8,19 +8,20 @@ type Props = {
   title: string;
 };
 const Task = ({ title }: Props) => {
+  // const [drag, setdrag] = useState<boolean>();
+
   const task = useTaskStore((s) => s.tasks.find((task) => task.title === title));
   const deleteTask = useTaskStore((s) => s.deleteTask);
-
-  const [drag, setdrag] = useState("");
+  const setDraggedTask = useTaskStore((s) => s.setDraggedTask);
 
   if (!task) return null;
 
   return (
     <div
-      className={`flex min-h-[5rem] w-[300px] cursor-move flex-col justify-between  rounded-md bg-white p-2 text-black active:border-sky-500`}
-      draggable
+      className={`flex w-[299px] cursor-move flex-col justify-between gap-1 overflow-hidden bg-white p-2 text-black`}
+      draggable={true}
       onDragStart={(e) => {
-        setdrag(task.title);
+        setDraggedTask(task);
       }}
     >
       <div>{task?.title}</div>
